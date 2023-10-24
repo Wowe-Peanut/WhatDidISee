@@ -1,0 +1,115 @@
+
+CNN: What you've done with images:
+    Fixed input size, Fixed output size
+    Uses filters, pools, layers
+
+RNN: Used for analyzing temporal and SEQUENTIAL DATA:
+    Like language, text, and videos
+    Better at looking ahead (kinda)
+    Good at speech and text (NLP)
+    
+    Usually need to go back and understand context by recalling, detecting,
+    and sending data back into the network in loops
+    
+    Transformations use this attention stuff to remember further back in time
+    and identify relevant portions better --> Used in LLM like GPT
+
+    This project uses RNN
+    and LSTM (Long short-term memory) a type of RNN good a thinking
+    about long-term dependecies (like all features in an image
+    being accounted for the in caption)
+
+Attention Mechanism: 
+    Focusing on Certain parts of an image 
+    Choosing parts of encoder relevant to task at hand
+    Labeling and consider parts of the image more than others
+    
+    
+Encoding: 
+    Encoding image into a fixed/common form, then decoding word by word
+
+    Many people have already built good CNNs at that understand images
+    fairly well --> Transfer Learning using these learned images
+
+    Uses these prebuilt models to convert a three color channel 2D image
+    to a smaller and smaller tensor --> (2048, 14, 14) in our case
+
+    Each smaller tensor is more "learned" (a better representation of the
+    image)
+
+    We will use all the layers of a pretrained model EXCEPT FOR THE LAST 2
+    which are pooling and linear prediction layers
+
+    We are "FINE TUNING" this pretrained model to work best for our
+    application
+
+    We will only fine tune blocks 2-4 of ResNet (the pretrained model used here)
+    We don't mess with 1 because it's probably learned something very 
+    fundamental about the image (edges, curves, etc)
+
+Transfer Learning:
+    Instead of training a new model completely from scratch
+    You can use preexisting models and fine tune to your needs
+
+    Always better to use a MUCH SMALLER LEARNING RATE because the 
+    model your training off of is already somewhat optimized
+    and we don't wanna throw it too far off
+
+
+Beam Search:
+    Instead of being greedy (choosing the best score words at each step)
+    Beam search finds the most optimal solution
+
+    Its better to not decide until we've finished decoding everything
+    BUT that would be too many combinations:
+
+        1. Set a k value
+        2. After first decode step, consider the top k candidates
+        3. Generate k second words from those candidates
+        4. Consider only the best k (first, second) word combos
+        5. Repeat until k sequences have generated the <end> token
+        6. Find best complete sequence from those k
+
+    This will only be used during test/actual use, not in training
+
+    Bleu is used to "score" these generated captions
+
+Model Checkpoint:
+    A pretrained model that you can continue training from a certain point
+
+Decoding:
+    Looking at the "learned" tensor given by the encoder
+    and generating words 1-by-1
+
+    Without Attention:
+        Each predicted word is fed back in and used to help generate
+        the next word
+
+    With Attention:
+        Decoder should LOOK at different parts of image during
+        different points in the sequence it generates
+
+        Attention Network:
+            Trained to take in the the encoded ("learned") image from
+            encoder AND previous generated work 
+
+            Outputs a weighted region of the encoded image that is
+            dubbed "most important for next decode"
+
+
+        This weighted attention graph AND the previous words
+        are then passed to the decoder AGAIN, to generate next word
+
+Teacher Forcing:
+        Giving ground truth captions (answers we know are correct the image)
+        to the decoder at each step INSTEAD of the word generated in
+        the previous step
+
+        Common during training to speed up convergence
+        This is used because Bleu doesn't actually tell us how
+        "good" our model is, just good the captions english is
+
+        BUT:
+            Can become to reliant on being given the correct answer
+            Can exhibit instability in practice
+
